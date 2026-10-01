@@ -1,0 +1,6 @@
+{
+  "name": "PhotoSHA Duplicate Finder",
+  "description": "Scan and identify duplicate Google Photos using cryptographic SHA checksums with exact pixel dimensions and deep EXIF comparison.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
