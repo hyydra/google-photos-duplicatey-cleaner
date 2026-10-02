@@ -92,8 +92,8 @@ export async function fetchGoogleDrivePhotosList(
       megapixels,
       aspectRatio,
       md5: file.md5Checksum,
-      sha256: file.sha256Checksum, // Native Drive SHA-256 if available
-      hashStatus: file.sha256Checksum ? 'completed' : 'pending',
+      sha256: file.sha256Checksum || file.md5Checksum, // Use native Drive checksum if present
+      hashStatus: file.sha256Checksum || file.md5Checksum ? 'completed' : 'pending',
       exif,
       source: 'google-drive',
     };
@@ -104,6 +104,94 @@ export async function fetchGoogleDrivePhotosList(
     nextPageToken: data.nextPageToken,
     sourceType: 'google-drive',
   };
+}
+
+/**
+ * Auto-paginating photo fetcher for large amounts of files.
+ * Loops through Drive API pages until targetCount is satisfied or no more files exist.
+ */
+export async function fetchGoogleDrivePhotosPaged(
+  accessToken: string,
+  targetCount: number = 250,
+  onProgress?: (totalFetched: number) => void,
+  startPageToken?: string
+): Promise<{ items: PhotoMediaItem[]; nextPageToken?: string }> {
+  const items: PhotoMediaItem[] = [];
+  let pageToken: string | undefined = startPageToken;
+  const isUnlimited = targetCount <= 0 || !isFinite(targetCount);
+
+  while (isUnlimited || items.length < targetCount) {
+    const remaining = isUnlimited ? 100 : targetCount - items.length;
+    const batchSize = Math.min(100, remaining);
+
+    const result = await fetchGoogleDrivePhotosList(accessToken, batchSize, pageToken);
+    if (!result.items || result.items.length === 0) {
+      break;
+    }
+
+    items.push(...result.items);
+    pageToken = result.nextPageToken;
+
+    if (onProgress) {
+      onProgress(items.length);
+    }
+
+    if (!pageToken) {
+      break; // End of library reached
+    }
+  }
+
+  return {
+    items,
+    nextPageToken: pageToken,
+  };
+}
+
+/**
+ * Concurrent batch processor to download and compute hashes/EXIF for large libraries.
+ * Concurrency controls how many photos are processed in parallel.
+ */
+export async function processPhotosConcurrently(
+  accessToken: string,
+  items: PhotoMediaItem[],
+  concurrency = 5,
+  onItemCompleted?: (completedCount: number, currentItem: PhotoMediaItem) => void,
+  isPausedOrCancelled?: () => boolean
+): Promise<PhotoMediaItem[]> {
+  const results: PhotoMediaItem[] = new Array(items.length);
+  let currentIndex = 0;
+  let completedCount = 0;
+
+  async function worker() {
+    while (currentIndex < items.length) {
+      if (isPausedOrCancelled && isPausedOrCancelled()) {
+        break;
+      }
+      const index = currentIndex++;
+      const item = items[index];
+
+      let processed: PhotoMediaItem;
+      // If item already has a verified cryptographic hash and valid pixel dimensions,
+      // it is already complete.
+      if (item.hashStatus === 'completed' && item.sha256 && item.width > 0) {
+        processed = item;
+      } else {
+        processed = await downloadAndProcessDrivePhoto(accessToken, item);
+      }
+
+      results[index] = processed;
+      completedCount++;
+
+      if (onItemCompleted) {
+        onItemCompleted(completedCount, processed);
+      }
+    }
+  }
+
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, () => worker());
+  await Promise.all(workers);
+
+  return items.map((orig, i) => results[i] || orig);
 }
 
 /**

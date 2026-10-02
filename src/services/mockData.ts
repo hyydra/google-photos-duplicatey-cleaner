@@ -1,7 +1,7 @@
 import { PhotoMediaItem } from '../types';
 
-// High quality sample images curated with exact duplicates, resized versions, and different EXIF
 export const SAMPLE_PHOTOS: PhotoMediaItem[] = [
+  // Cluster 1: Sony A7R IV Landscape
   {
     id: 'sample-sha-dup-1a',
     filename: 'IMG_4821_Original.jpg',
@@ -66,6 +66,8 @@ export const SAMPLE_PHOTOS: PhotoMediaItem[] = [
     },
     source: 'sample'
   },
+
+  // Cluster 2: iPhone 14 Pro Max Yosemite (3 copies)
   {
     id: 'sample-sha-dup-2a',
     filename: 'DSC09142_Yosemite.jpg',
@@ -162,6 +164,8 @@ export const SAMPLE_PHOTOS: PhotoMediaItem[] = [
     },
     source: 'sample'
   },
+
+  // Cluster 3: Canon EOS R6 Misty Forest (Full Res vs Web Resized)
   {
     id: 'sample-exif-pair-1a',
     filename: 'Misty_Morning_FullRes.jpg',
@@ -226,6 +230,206 @@ export const SAMPLE_PHOTOS: PhotoMediaItem[] = [
     },
     source: 'sample'
   },
+
+  // Cluster 4: DJI Drone Aerial Coastline (2 exact duplicates)
+  {
+    id: 'sample-sha-dup-4a',
+    filename: 'DJI_0488_Coastline_4K.jpg',
+    productUrl: 'https://photos.google.com',
+    baseUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=2000&q=80',
+    mimeType: 'image/jpeg',
+    creationTime: '2024-02-14T15:22:04Z',
+    fileSizeBytes: 6241900,
+    width: 4000,
+    height: 3000,
+    megapixels: 12.0,
+    aspectRatio: '4:3 (Standard)',
+    sha256: '8b7f6e5d4c3b2a1f0e9d8c7b6a5f4e3d2c1b0a9f8e7d6c5b4a3f2e1d0c9b8a7f',
+    sha1: '6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e',
+    hashStatus: 'completed',
+    exif: {
+      cameraMake: 'DJI',
+      cameraModel: 'Mavic 3 Pro',
+      lensModel: 'Hasselblad L2D-20c 24mm f/2.8',
+      dateTimeOriginal: '2024-02-14 15:22:04',
+      iso: 100,
+      aperture: 'f/2.8',
+      focalLength: '12.29mm',
+      exposureTime: '1/1600s',
+      flash: 'None',
+      whiteBalance: 'Sunny (5500K)',
+      software: 'DJI Fly v1.12.8',
+      colorSpace: 'D-Log M / sRGB',
+      gps: { latitude: 21.3069, longitude: -157.8583, altitude: 118 }
+    },
+    source: 'sample'
+  },
+  {
+    id: 'sample-sha-dup-4b',
+    filename: 'DJI_0488_Coastline_SD_Card_Dump.jpg',
+    productUrl: 'https://photos.google.com',
+    baseUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=2000&q=80',
+    mimeType: 'image/jpeg',
+    creationTime: '2024-02-14T15:22:04Z',
+    fileSizeBytes: 6241900,
+    width: 4000,
+    height: 3000,
+    megapixels: 12.0,
+    aspectRatio: '4:3 (Standard)',
+    sha256: '8b7f6e5d4c3b2a1f0e9d8c7b6a5f4e3d2c1b0a9f8e7d6c5b4a3f2e1d0c9b8a7f',
+    sha1: '6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e',
+    hashStatus: 'completed',
+    exif: {
+      cameraMake: 'DJI',
+      cameraModel: 'Mavic 3 Pro',
+      lensModel: 'Hasselblad L2D-20c 24mm f/2.8',
+      dateTimeOriginal: '2024-02-14 15:22:04',
+      iso: 100,
+      aperture: 'f/2.8',
+      focalLength: '12.29mm',
+      exposureTime: '1/1600s',
+      flash: 'None',
+      whiteBalance: 'Sunny (5500K)',
+      software: 'DJI Fly v1.12.8',
+      colorSpace: 'D-Log M / sRGB',
+      gps: { latitude: 21.3069, longitude: -157.8583, altitude: 118 }
+    },
+    source: 'sample'
+  },
+
+  // Cluster 5: Fujifilm GFX 100S Mountain Sunset (2 exact duplicates)
+  {
+    id: 'sample-sha-dup-5a',
+    filename: 'FUJI_GFX_Alps_Sunset.jpg',
+    productUrl: 'https://photos.google.com',
+    baseUrl: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=2000&q=80',
+    mimeType: 'image/jpeg',
+    creationTime: '2024-03-02T18:45:10Z',
+    fileSizeBytes: 14820150,
+    width: 8256,
+    height: 5504,
+    megapixels: 45.44,
+    aspectRatio: '3:2 (Classic 35mm)',
+    sha256: '4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b',
+    sha1: '1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b',
+    hashStatus: 'completed',
+    exif: {
+      cameraMake: 'FUJIFILM',
+      cameraModel: 'GFX 100S',
+      lensModel: 'GF 32-64mm F4 R LM WR',
+      dateTimeOriginal: '2024-03-02 18:45:10',
+      iso: 100,
+      aperture: 'f/8.0',
+      focalLength: '45mm',
+      exposureTime: '1/60s',
+      flash: 'Off',
+      whiteBalance: 'Velvia / Vivid',
+      software: 'FUJIFILM Firmware 2.0',
+      colorSpace: 'Adobe RGB (1998)',
+      gps: { latitude: 46.5197, longitude: 9.8355, altitude: 2890 }
+    },
+    source: 'sample'
+  },
+  {
+    id: 'sample-sha-dup-5b',
+    filename: 'FUJI_GFX_Alps_Sunset_Desktop_Wallpapers.jpg',
+    productUrl: 'https://photos.google.com',
+    baseUrl: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=2000&q=80',
+    mimeType: 'image/jpeg',
+    creationTime: '2024-03-02T18:45:10Z',
+    fileSizeBytes: 14820150,
+    width: 8256,
+    height: 5504,
+    megapixels: 45.44,
+    aspectRatio: '3:2 (Classic 35mm)',
+    sha256: '4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b',
+    sha1: '1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b',
+    hashStatus: 'completed',
+    exif: {
+      cameraMake: 'FUJIFILM',
+      cameraModel: 'GFX 100S',
+      lensModel: 'GF 32-64mm F4 R LM WR',
+      dateTimeOriginal: '2024-03-02 18:45:10',
+      iso: 100,
+      aperture: 'f/8.0',
+      focalLength: '45mm',
+      exposureTime: '1/60s',
+      flash: 'Off',
+      whiteBalance: 'Velvia / Vivid',
+      software: 'FUJIFILM Firmware 2.0',
+      colorSpace: 'Adobe RGB (1998)',
+      gps: { latitude: 46.5197, longitude: 9.8355, altitude: 2890 }
+    },
+    source: 'sample'
+  },
+
+  // Cluster 6: Leica Q2 Street Photography (Burst duplicates)
+  {
+    id: 'sample-sha-dup-6a',
+    filename: 'L1000492_Tokyo_Street_Rain.jpg',
+    productUrl: 'https://photos.google.com',
+    baseUrl: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=2000&q=80',
+    mimeType: 'image/jpeg',
+    creationTime: '2024-04-10T21:12:08Z',
+    fileSizeBytes: 7891230,
+    width: 6000,
+    height: 4000,
+    megapixels: 24.0,
+    aspectRatio: '3:2 (Classic 35mm)',
+    sha256: '5e4d3c2b1a0f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d',
+    sha1: '9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e',
+    hashStatus: 'completed',
+    exif: {
+      cameraMake: 'Leica Camera AG',
+      cameraModel: 'LEICA Q2',
+      lensModel: 'Summilux 28mm f/1.7 ASPH',
+      dateTimeOriginal: '2024-04-10 21:12:08',
+      iso: 800,
+      aperture: 'f/1.7',
+      focalLength: '28mm',
+      exposureTime: '1/125s',
+      flash: 'Off',
+      whiteBalance: 'Auto',
+      software: 'Leica Q2 v3.1',
+      colorSpace: 'sRGB',
+      gps: { latitude: 35.6762, longitude: 139.6503, altitude: 38 }
+    },
+    source: 'sample'
+  },
+  {
+    id: 'sample-sha-dup-6b',
+    filename: 'L1000492_Tokyo_Street_Rain_Copy_Export.jpg',
+    productUrl: 'https://photos.google.com',
+    baseUrl: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=2000&q=80',
+    mimeType: 'image/jpeg',
+    creationTime: '2024-04-10T21:12:08Z',
+    fileSizeBytes: 7891230,
+    width: 6000,
+    height: 4000,
+    megapixels: 24.0,
+    aspectRatio: '3:2 (Classic 35mm)',
+    sha256: '5e4d3c2b1a0f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d',
+    sha1: '9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e',
+    hashStatus: 'completed',
+    exif: {
+      cameraMake: 'Leica Camera AG',
+      cameraModel: 'LEICA Q2',
+      lensModel: 'Summilux 28mm f/1.7 ASPH',
+      dateTimeOriginal: '2024-04-10 21:12:08',
+      iso: 800,
+      aperture: 'f/1.7',
+      focalLength: '28mm',
+      exposureTime: '1/125s',
+      flash: 'Off',
+      whiteBalance: 'Auto',
+      software: 'Leica Q2 v3.1',
+      colorSpace: 'sRGB',
+      gps: { latitude: 35.6762, longitude: 139.6503, altitude: 38 }
+    },
+    source: 'sample'
+  },
+
+  // Unique Non-duplicate Photos
   {
     id: 'sample-unique-1',
     filename: 'Northern_Lights_Aurora.jpg',
@@ -255,6 +459,38 @@ export const SAMPLE_PHOTOS: PhotoMediaItem[] = [
       software: 'Nikon Firmware 2.0',
       colorSpace: 'sRGB',
       gps: { latitude: 64.1466, longitude: -21.9426, altitude: 85 }
+    },
+    source: 'sample'
+  },
+  {
+    id: 'sample-unique-2',
+    filename: 'Architectural_Curves_Modern.jpg',
+    productUrl: 'https://photos.google.com',
+    baseUrl: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=2000&q=80',
+    mimeType: 'image/jpeg',
+    creationTime: '2024-05-19T14:10:05Z',
+    fileSizeBytes: 3950200,
+    width: 3840,
+    height: 2560,
+    megapixels: 9.83,
+    aspectRatio: '3:2 (Classic 35mm)',
+    sha256: '3c2b1a0f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c2b',
+    sha1: 'a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9',
+    hashStatus: 'completed',
+    exif: {
+      cameraMake: 'Hasselblad',
+      cameraModel: 'X2D 100C',
+      lensModel: 'XCD 38mm f/2.5 V',
+      dateTimeOriginal: '2024-05-19 14:10:05',
+      iso: 64,
+      aperture: 'f/5.6',
+      focalLength: '38mm',
+      exposureTime: '1/500s',
+      flash: 'Off',
+      whiteBalance: 'Daylight',
+      software: 'Phocus v3.7',
+      colorSpace: 'Hasselblad Natural Colour Solution',
+      gps: { latitude: 48.8566, longitude: 2.3522, altitude: 55 }
     },
     source: 'sample'
   }

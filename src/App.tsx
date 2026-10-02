@@ -15,6 +15,8 @@ import {
 import {
   scanUniversalPhotos,
   downloadAndProcessDrivePhoto,
+  fetchGoogleDrivePhotosPaged,
+  processPhotosConcurrently,
   createPhotosPickerSession,
   fetchPhotosPickerMediaItems,
   clusterDuplicates,
@@ -37,8 +39,16 @@ import {
   Download,
   Info,
   Layers,
-  ArrowRight
+  ArrowRight,
+  Database,
+  RefreshCw,
+  ChevronDown
 } from 'lucide-react';
+import {
+  saveCachedScan,
+  loadCachedScan,
+  clearCachedScan
+} from './services/cache';
 import { formatBytes } from './services/hasher';
 
 export default function App() {
@@ -58,15 +68,21 @@ export default function App() {
   const [nextPageToken, setNextPageToken] = useState<string | undefined>(undefined);
 
   // Scan Configs
-  const [batchSize, setBatchSize] = useState<number>(25);
+  const [batchSize, setBatchSize] = useState<number>(250);
   const [hashAlgorithm, setHashAlgorithm] = useState<'SHA-256' | 'SHA-1'>('SHA-256');
   const [useFullResDownload, setUseFullResDownload] = useState<boolean>(true);
   const [filterType, setFilterType] = useState<'all' | 'exact-sha' | 'dimension-and-exif'>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [visibleGroupLimit, setVisibleGroupLimit] = useState<number>(30);
+
+  // Pause ref
+  const isPausedRef = React.useRef<boolean>(false);
 
   // Modals
   const [comparingItems, setComparingItems] = useState<PhotoMediaItem[] | null>(null);
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [isDestructiveOpen, setIsDestructiveOpen] = useState(false);
+  const [cacheTimestamp, setCacheTimestamp] = useState<number | null>(null);
 
   // Progress
   const [progress, setProgress] = useState<ScanProgress>({
@@ -92,6 +108,27 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
+  // Load cached scan results from IndexedDB on initial mount
+  useEffect(() => {
+    let isMounted = true;
+    loadCachedScan().then((cached) => {
+      if (isMounted && cached && cached.photos.length > 0) {
+        setPhotos(cached.photos);
+        setCacheTimestamp(cached.timestamp);
+        setScanStatus('completed');
+        setProgress({
+          totalFound: cached.photos.length,
+          fetchedItems: cached.photos.length,
+          hashesProcessed: cached.photos.length,
+          duplicateGroupsFound: 0,
+        });
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   // Compute Clusters
   const { shaGroups, exifNearGroups, totalDuplicateCount, totalSavingsBytes } = useMemo(() => {
     return clusterDuplicates(photos);
@@ -105,12 +142,28 @@ export default function App() {
     }));
   }, [shaGroups.length, exifNearGroups.length]);
 
-  // Filtered Groups for rendering
+  // Filtered & Searched Groups for rendering
   const displayedGroups = useMemo(() => {
-    if (filterType === 'exact-sha') return shaGroups;
-    if (filterType === 'dimension-and-exif') return exifNearGroups;
-    return [...shaGroups, ...exifNearGroups];
-  }, [filterType, shaGroups, exifNearGroups]);
+    let base = [...shaGroups, ...exifNearGroups];
+    if (filterType === 'exact-sha') base = shaGroups;
+    if (filterType === 'dimension-and-exif') base = exifNearGroups;
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      return base.filter(
+        (g) =>
+          g.hashKey.toLowerCase().includes(q) ||
+          g.items.some(
+            (it) =>
+              it.filename.toLowerCase().includes(q) ||
+              it.exif.cameraMake?.toLowerCase().includes(q) ||
+              it.exif.cameraModel?.toLowerCase().includes(q) ||
+              it.sha256?.toLowerCase().includes(q)
+          )
+      );
+    }
+    return base;
+  }, [filterType, shaGroups, exifNearGroups, searchQuery]);
 
   // Handle Sign In
   const handleSignIn = async () => {
@@ -166,8 +219,9 @@ export default function App() {
     }
   };
 
-  // Scan Google Photos & Drive Library
-  const handleStartScan = async () => {
+  // Scan Google Photos & Drive Library with support for large amounts of files
+  const handleStartScan = async (appendNextBatch = false) => {
+    isPausedRef.current = false;
     let currentToken = token || (await getAccessToken());
     if (!currentToken) {
       try {
@@ -193,8 +247,22 @@ export default function App() {
     setIsSampleMode(false);
 
     try {
-      // 1. Fetch metadata list from Google Photos & Drive storage
-      const fetchResult = await scanUniversalPhotos(currentToken, batchSize, nextPageToken);
+      const targetCount = batchSize === 0 ? Infinity : batchSize;
+      const startToken = appendNextBatch ? nextPageToken : undefined;
+
+      // 1. Fetch metadata list from Google Photos & Drive with auto-paging
+      const fetchResult = await fetchGoogleDrivePhotosPaged(
+        currentToken,
+        targetCount,
+        (fetchedCount) => {
+          setProgress((prev) => ({
+            ...prev,
+            fetchedItems: appendNextBatch ? photos.length + fetchedCount : fetchedCount,
+          }));
+        },
+        startToken
+      );
+
       setNextPageToken(fetchResult.nextPageToken);
 
       if (fetchResult.items.length === 0) {
@@ -202,37 +270,44 @@ export default function App() {
         return;
       }
 
-      setPhotos(fetchResult.items);
+      const initialPhotos = appendNextBatch ? [...photos, ...fetchResult.items] : fetchResult.items;
+      setPhotos(initialPhotos);
       setProgress((prev) => ({
         ...prev,
-        fetchedItems: fetchResult.items.length,
-        hashesProcessed: 0,
+        fetchedItems: initialPhotos.length,
+        hashesProcessed: appendNextBatch ? photos.length : 0,
       }));
 
-      // 2. Compute Hashes & EXIF sequentially to avoid browser thread locks
+      // 2. Compute Hashes & EXIF with 5-thread concurrency pool
       setScanStatus('computing-hashes');
-      const processedItems: PhotoMediaItem[] = [...fetchResult.items];
+      const itemsToProcess = appendNextBatch ? fetchResult.items : initialPhotos;
 
-      for (let i = 0; i < processedItems.length; i++) {
-        const item = processedItems[i];
-        setProgress((prev) => ({
-          ...prev,
-          hashesProcessed: i,
-          currentFilename: item.filename,
-        }));
+      const processedNewItems = await processPhotosConcurrently(
+        currentToken,
+        itemsToProcess,
+        5,
+        (doneCount, currentItem) => {
+          setProgress((prev) => ({
+            ...prev,
+            hashesProcessed: (appendNextBatch ? photos.length : 0) + doneCount,
+            currentFilename: currentItem.filename,
+          }));
+        },
+        () => isPausedRef.current
+      );
 
-        const processed = await downloadAndProcessDrivePhoto(currentToken, item);
-        processedItems[i] = processed;
-
-        // Update state in chunks so UI updates live
-        setPhotos([...processedItems]);
-      }
+      const allMerged = appendNextBatch ? [...photos, ...processedNewItems] : processedNewItems;
+      setPhotos(allMerged);
 
       setProgress((prev) => ({
         ...prev,
-        hashesProcessed: processedItems.length,
+        hashesProcessed: allMerged.length,
         currentFilename: undefined,
       }));
+
+      // Persist results to IndexedDB
+      await saveCachedScan(allMerged);
+      setCacheTimestamp(Date.now());
 
       setScanStatus('completed');
       confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 } });
@@ -242,6 +317,26 @@ export default function App() {
       setScanError(msg);
       setScanStatus('error');
     }
+  };
+
+  const handlePauseScan = () => {
+    isPausedRef.current = true;
+    setScanStatus('paused');
+  };
+
+  const handleClearCache = async () => {
+    await clearCachedScan();
+    setCacheTimestamp(null);
+    setPhotos([]);
+    setScanStatus('idle');
+    setScanError(null);
+    setNextPageToken(undefined);
+    setProgress({
+      totalFound: 0,
+      fetchedItems: 0,
+      hashesProcessed: 0,
+      duplicateGroupsFound: 0,
+    });
   };
 
   const handleResetScan = () => {
@@ -320,8 +415,11 @@ export default function App() {
   };
 
   // Handle local photos drop
-  const handleLocalPhotosLoaded = (loadedItems: PhotoMediaItem[]) => {
-    setPhotos((prev) => [...loadedItems, ...prev]);
+  const handleLocalPhotosLoaded = async (loadedItems: PhotoMediaItem[]) => {
+    const merged = [...loadedItems, ...photos];
+    setPhotos(merged);
+    await saveCachedScan(merged);
+    setCacheTimestamp(Date.now());
     setActiveTab('scan');
     confetti({ particleCount: 40, spread: 60, origin: { y: 0.6 } });
   };
@@ -398,8 +496,8 @@ export default function App() {
             <ScanController
               status={scanStatus}
               progress={progress}
-              onStartScan={handleStartScan}
-              onPauseScan={() => setScanStatus('paused')}
+              onStartScan={() => handleStartScan(false)}
+              onPauseScan={handlePauseScan}
               onResetScan={handleResetScan}
               onLoadSampleData={handleLoadSampleData}
               isLoggedIn={!!user}
@@ -416,7 +514,51 @@ export default function App() {
               duplicateCount={totalDuplicateCount}
               totalPhotosCount={photos.length}
               onOpenReport={() => setIsReportOpen(true)}
+              hasNextPage={!!nextPageToken}
+              onScanNextBatch={() => handleStartScan(true)}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
             />
+
+            {/* Cache Status Banner */}
+            {cacheTimestamp && !isSampleMode && photos.length > 0 && (
+              <div className="mb-6 px-4 py-3 bg-linear-to-r from-blue-50/90 to-indigo-50/90 border border-blue-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-700 shadow-xs">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                    <Database className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-slate-900">
+                      Scan Results Loaded from Local Storage Cache
+                    </div>
+                    <div className="text-slate-500 text-[11px] mt-0.5">
+                      {photos.length} photos with computed SHA checksums and EXIF parameters (cached on{' '}
+                      {new Date(cacheTimestamp).toLocaleDateString()} at{' '}
+                      {new Date(cacheTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      ).
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => handleStartScan(false)}
+                    disabled={scanStatus === 'fetching-list' || scanStatus === 'computing-hashes'}
+                    className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl font-medium flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Re-scan Library</span>
+                  </button>
+                  <button
+                    onClick={handleClearCache}
+                    className="px-3 py-1.5 bg-white border border-red-200 hover:bg-red-50 text-red-600 rounded-xl font-medium flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                    title="Clear cached scan results from browser storage"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Clear Cache</span>
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Empty State / Welcome Screen */}
             {photos.length === 0 && (
@@ -434,7 +576,7 @@ export default function App() {
                 <div className="flex flex-wrap items-center justify-center gap-3">
                   {user ? (
                     <button
-                      onClick={handleStartScan}
+                      onClick={() => handleStartScan(false)}
                       className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm shadow-md transition-all cursor-pointer flex items-center gap-2"
                     >
                       <span>Start Google Photos Scan</span>
@@ -537,8 +679,8 @@ export default function App() {
                   )}
                 </div>
 
-                {/* Render Duplicate Groups */}
-                {displayedGroups.map((group) => (
+                {/* Render Duplicate Groups (paginated for high performance with large libraries) */}
+                {displayedGroups.slice(0, visibleGroupLimit).map((group) => (
                   <DuplicateGroupCard
                     key={group.groupId}
                     group={group}
@@ -547,6 +689,27 @@ export default function App() {
                     onSelectAllExceptOne={handleSelectAllExceptOne}
                   />
                 ))}
+
+                {/* Show More Clusters Button for Large Amounts of Files */}
+                {displayedGroups.length > visibleGroupLimit && (
+                  <div className="text-center py-6 flex flex-wrap items-center justify-center gap-3">
+                    <button
+                      onClick={() => setVisibleGroupLimit((prev) => prev + 30)}
+                      className="px-6 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer inline-flex items-center gap-2"
+                    >
+                      <ChevronDown className="w-4 h-4 text-slate-500" />
+                      <span>
+                        Show Next 30 Clusters ({Math.min(visibleGroupLimit, displayedGroups.length)} of {displayedGroups.length} displayed)
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => setVisibleGroupLimit(displayedGroups.length)}
+                      className="px-4 py-2.5 text-xs text-blue-600 hover:text-blue-800 font-semibold cursor-pointer"
+                    >
+                      Show All ({displayedGroups.length})
+                    </button>
+                  </div>
+                )}
 
                 {/* All photos unique message */}
                 {displayedGroups.length === 0 && photos.length > 0 && (
