@@ -163,7 +163,12 @@ export const LocalPhotoDropzone: React.FC<LocalPhotoDropzoneProps> = ({ onPhotos
             multiple
             accept="image/*,.heic,.tiff"
             className="hidden"
-            onChange={(e) => e.target.files && processFiles(e.target.files)}
+            onChange={(e) => {
+              if (e.target.files && e.target.files.length > 0) {
+                processFiles(e.target.files);
+              }
+              e.target.value = '';
+            }}
           />
           {/* @ts-ignore folder select attribute */}
           <input
@@ -175,7 +180,12 @@ export const LocalPhotoDropzone: React.FC<LocalPhotoDropzoneProps> = ({ onPhotos
             directory="true"
             multiple
             className="hidden"
-            onChange={(e) => e.target.files && processFiles(e.target.files)}
+            onChange={(e) => {
+              if (e.target.files && e.target.files.length > 0) {
+                processFiles(e.target.files);
+              }
+              e.target.value = '';
+            }}
           />
         </div>
       </div>
@@ -187,14 +197,16 @@ export const LocalPhotoDropzone: React.FC<LocalPhotoDropzoneProps> = ({ onPhotos
               Hashing & Extracting EXIF ({processingProgress.current} / {processingProgress.total})
             </span>
             <span>
-              {Math.round((processingProgress.current / processingProgress.total) * 100)}%
+              {processingProgress.total > 0
+                ? Math.round((processingProgress.current / processingProgress.total) * 100)
+                : 0}%
             </span>
           </div>
           <div className="w-full bg-blue-200 rounded-full h-2 overflow-hidden">
             <div
               className="bg-blue-600 h-2 rounded-full transition-all duration-200"
               style={{
-                width: `${(processingProgress.current / processingProgress.total) * 100}%`,
+                width: `${processingProgress.total > 0 ? (processingProgress.current / processingProgress.total) * 100 : 0}%`,
               }}
             />
           </div>

@@ -454,10 +454,16 @@ export function clusterDuplicates(items: PhotoMediaItem[]): {
   }
 
   // 2. Dimension & EXIF matches
+  const exactShaItemIds = new Set<string>();
+  for (const g of shaGroups) {
+    for (const it of g.items) {
+      exactShaItemIds.add(it.id);
+    }
+  }
+
   const exifMap = new Map<string, PhotoMediaItem[]>();
   for (const item of items) {
-    const inExactSha = shaGroups.some((g) => g.items.some((i) => i.id === item.id));
-    if (!inExactSha && item.exif.cameraModel && item.exif.dateTimeOriginal && item.width > 0) {
+    if (!exactShaItemIds.has(item.id) && item.exif.cameraModel && item.exif.dateTimeOriginal && item.width > 0) {
       const key = `${item.exif.cameraMake || ''}_${item.exif.cameraModel}_${item.exif.dateTimeOriginal}_${item.width}x${item.height}`;
       const existing = exifMap.get(key) || [];
       existing.push(item);
@@ -468,12 +474,18 @@ export function clusterDuplicates(items: PhotoMediaItem[]): {
   const exifNearGroups: DuplicateGroup[] = [];
   for (const [key, groupItems] of exifMap.entries()) {
     if (groupItems.length > 1) {
+      totalDups += groupItems.length - 1;
+      const totalGroupBytes = groupItems.reduce((acc, it) => acc + (it.fileSizeBytes || 0), 0);
+      const preservedBytes = groupItems[0].fileSizeBytes || 0;
+      const savings = Math.max(0, totalGroupBytes - preservedBytes);
+      totalSavings += savings;
+
       exifNearGroups.push({
         groupId: `exif-grp-${groupCounter++}`,
         type: 'dimension-and-exif',
         hashKey: key,
         items: groupItems,
-        savingsBytes: 0,
+        savingsBytes: savings,
         allDimensionsMatch: true,
         allExifMatch: true,
         differencesSummary: [

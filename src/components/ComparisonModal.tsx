@@ -16,7 +16,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { PhotoMediaItem } from '../types';
-import { comparePhotoDetails, formatBytes } from '../services/hasher';
+import { comparePhotoDetails, formatBytes, getPhotoDisplayUrl } from '../services/hasher';
 
 interface ComparisonModalProps {
   items: PhotoMediaItem[];
@@ -248,7 +248,7 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
                   </div>
                   <div className="relative aspect-4/3 overflow-hidden flex items-center justify-center bg-black/40">
                     <img
-                      src={photoA.blobUrl || `${photoA.baseUrl}=w1600-h1600`}
+                      src={getPhotoDisplayUrl(photoA, 'w1600-h1600')}
                       alt={photoA.filename}
                       style={{ transform: `scale(${zoomLevel})` }}
                       className="max-w-full max-h-full object-contain transition-transform duration-200"
@@ -266,7 +266,7 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
                   </div>
                   <div className="relative aspect-4/3 overflow-hidden flex items-center justify-center bg-black/40">
                     <img
-                      src={photoB.blobUrl || `${photoB.baseUrl}=w1600-h1600`}
+                      src={getPhotoDisplayUrl(photoB, 'w1600-h1600')}
                       alt={photoB.filename}
                       style={{ transform: `scale(${zoomLevel})` }}
                       className="max-w-full max-h-full object-contain transition-transform duration-200"
@@ -284,7 +284,7 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
                 <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <img
-                      src={photoA.blobUrl || `${photoA.baseUrl}=w120-h120`}
+                      src={getPhotoDisplayUrl(photoA, 'w120-h120')}
                       alt={photoA.filename}
                       className="w-14 h-14 rounded-lg object-cover border border-slate-300 shadow-xs"
                     />
@@ -330,7 +330,7 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
                 <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <img
-                      src={photoB.blobUrl || `${photoB.baseUrl}=w120-h120`}
+                      src={getPhotoDisplayUrl(photoB, 'w120-h120')}
                       alt={photoB.filename}
                       className="w-14 h-14 rounded-lg object-cover border border-slate-300 shadow-xs"
                     />

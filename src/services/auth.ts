@@ -19,8 +19,30 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || baseConfig.measurementId || '',
 };
 
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-export const auth = getAuth(app);
+const app = (() => {
+  if (firebaseConfig.apiKey && firebaseConfig.apiKey.trim() !== '') {
+    return getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+  }
+  return null;
+})();
+
+let authInstance: ReturnType<typeof getAuth> | null = null;
+
+export const isFirebaseConfigured = (): boolean => {
+  return !!(firebaseConfig.apiKey && firebaseConfig.apiKey.trim() !== '');
+};
+
+export const getFirebaseAuth = () => {
+  if (!authInstance && app) {
+    try {
+      authInstance = getAuth(app);
+    } catch (e) {
+      console.warn('Could not initialize Firebase Auth:', e);
+      authInstance = null;
+    }
+  }
+  return authInstance;
+};
 
 const provider = new GoogleAuthProvider();
 // Google Drive and Photos Picker Scopes
@@ -40,6 +62,11 @@ export const initAuth = (
   onAuthSuccess?: (user: User, token: string) => void,
   onAuthFailure?: () => void
 ) => {
+  const auth = getFirebaseAuth();
+  if (!auth) {
+    if (onAuthFailure) onAuthFailure();
+    return () => {};
+  }
   return onAuthStateChanged(auth, async (user: User | null) => {
     if (user) {
       if (cachedAccessToken) {
@@ -56,6 +83,12 @@ export const initAuth = (
 };
 
 export const googleSignIn = async (): Promise<{ user: User; accessToken: string } | null> => {
+  const auth = getFirebaseAuth();
+  if (!auth) {
+    throw new Error(
+      'Firebase API key is not configured. Please set VITE_FIREBASE_API_KEY in your .env or .env.local file to enable Google Sign-In.'
+    );
+  }
   try {
     isSigningIn = true;
     const result = await signInWithPopup(auth, provider);
@@ -79,6 +112,9 @@ export const getAccessToken = async (): Promise<string | null> => {
 };
 
 export const logout = async () => {
-  await signOut(auth);
+  const auth = getFirebaseAuth();
+  if (auth) {
+    await signOut(auth);
+  }
   cachedAccessToken = null;
 };

@@ -742,7 +742,7 @@ export default function App() {
         <ReportModal
           isOpen={isReportOpen}
           onClose={() => setIsReportOpen(false)}
-          groups={shaGroups}
+          groups={[...shaGroups, ...exifNearGroups]}
           allPhotos={photos}
         />
       )}

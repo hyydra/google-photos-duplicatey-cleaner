@@ -134,13 +134,28 @@ export function computeAspectRatio(width: number, height: number): string {
 }
 
 export function formatBytes(bytes?: number): string {
-  if (bytes === undefined || bytes === null || isNaN(bytes)) return 'Unknown size';
+  if (bytes === undefined || bytes === null || isNaN(bytes) || bytes < 0) return 'Unknown size';
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB'];
+  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), sizes.length - 1);
   const num = (bytes / Math.pow(k, i)).toFixed(2);
   return `${num} ${sizes[i]}`;
+}
+
+/**
+ * Returns a safe image URL for rendering, handling blobs, Google Photos sizing, and external URLs safely.
+ */
+export function getPhotoDisplayUrl(item: PhotoMediaItem, size = 'w600-h600'): string {
+  if (item.blobUrl) return item.blobUrl;
+  if (!item.baseUrl) return '';
+  if (item.baseUrl.includes('googleusercontent.com')) {
+    if (/=[swhd]\d+/.test(item.baseUrl)) {
+      return item.baseUrl.replace(/=[swhd].*$/, `=${size}`);
+    }
+    return `${item.baseUrl}=${size}`;
+  }
+  return item.baseUrl;
 }
 
 /**

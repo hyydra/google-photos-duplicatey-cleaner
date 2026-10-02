@@ -14,7 +14,7 @@ import {
   Info
 } from 'lucide-react';
 import { DuplicateGroup, PhotoMediaItem } from '../types';
-import { formatBytes } from '../services/hasher';
+import { formatBytes, getPhotoDisplayUrl } from '../services/hasher';
 
 interface DuplicateGroupCardProps {
   group: DuplicateGroup;
@@ -143,7 +143,7 @@ export const DuplicateGroupCard: React.FC<DuplicateGroupCardProps> = ({
               {/* Image Preview with overlay badges */}
               <div className="relative aspect-4/3 bg-slate-100 overflow-hidden cursor-pointer" onClick={() => onCompare(group.items)}>
                 <img
-                  src={item.blobUrl || `${item.baseUrl}=w600-h600`}
+                  src={getPhotoDisplayUrl(item, 'w600-h600')}
                   alt={item.filename}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   loading="lazy"
