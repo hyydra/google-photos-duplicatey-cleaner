@@ -67,6 +67,41 @@ export const AboutSection: React.FC = () => {
         </div>
       </div>
 
+      {/* Connecting Your Own Google Account */}
+      <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-sm">
+            🔑
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-900 text-base">Using PhotoSHA With Your Own Google Account</h3>
+            <p className="text-xs text-slate-500">Zero backend dependencies — full personal privacy</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-600">
+          <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-2">
+            <span className="font-semibold text-slate-900 flex items-center gap-1.5 text-xs">
+              <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[11px] font-bold">1</span>
+              Personal OAuth 2.0 Web Client ID (Recommended)
+            </span>
+            <p className="leading-relaxed">
+              Create a free OAuth 2.0 Web Client ID in your own Google Cloud Console and add your current origin (e.g. <code className="bg-slate-100 px-1 py-0.5 rounded font-mono text-[11px]">http://localhost:3000</code>). Because you are accessing your own personal account with your own Client ID, Google grants immediate access without app verification delays.
+            </p>
+          </div>
+
+          <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-2">
+            <span className="font-semibold text-slate-900 flex items-center gap-1.5 text-xs">
+              <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-[11px] font-bold">2</span>
+              Direct Access Token (Quick 1-Minute Scan)
+            </span>
+            <p className="leading-relaxed">
+              Don't want to create an OAuth Client ID? Generate a temporary access token with <code className="bg-slate-100 px-1 py-0.5 rounded font-mono text-[11px]">gcloud auth print-access-token</code> or Google OAuth Playground, paste it into the connection modal, and begin analyzing right away.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Privacy Guarantee */}
       <div className="p-5 rounded-2xl bg-linear-to-r from-blue-50 to-indigo-50 border border-blue-200/80 flex items-start gap-4">
         <Cpu className="w-6 h-6 text-blue-600 shrink-0 mt-0.5" />

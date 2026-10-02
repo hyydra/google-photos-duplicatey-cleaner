@@ -66,3 +66,18 @@ export interface ScanProgress {
   currentBytes?: number;
   duplicateGroupsFound: number;
 }
+
+export interface AuthUser {
+  id?: string;
+  displayName?: string | null;
+  email?: string | null;
+  photoURL?: string | null;
+  authProvider?: 'google-oauth' | 'manual-token' | 'firebase';
+}
+
+export interface GoogleAuthConfig {
+  clientId?: string;
+  hasEnvClientId: boolean;
+  isFirebaseAvailable: boolean;
+}
+

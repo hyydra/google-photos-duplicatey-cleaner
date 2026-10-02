@@ -4,7 +4,6 @@
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { User } from 'firebase/auth';
 import confetti from 'canvas-confetti';
 import {
   initAuth,
@@ -22,7 +21,7 @@ import {
   clusterDuplicates,
 } from './services/googlePhotos';
 import { SAMPLE_PHOTOS } from './services/mockData';
-import { PhotoMediaItem, DuplicateGroup, ScanStatus, ScanProgress } from './types';
+import { PhotoMediaItem, DuplicateGroup, ScanStatus, ScanProgress, AuthUser } from './types';
 import { Header } from './components/Header';
 import { ScanController } from './components/ScanController';
 import { DuplicateGroupCard } from './components/DuplicateGroupCard';
@@ -31,6 +30,7 @@ import { ReportModal } from './components/ReportModal';
 import { LocalPhotoDropzone } from './components/LocalPhotoDropzone';
 import { AboutSection } from './components/AboutSection';
 import { DestructiveActionDialog } from './components/DestructiveActionDialog';
+import { GoogleAuthSettingsModal } from './components/GoogleAuthSettingsModal';
 import {
   AlertCircle,
   Sparkles,
@@ -52,10 +52,11 @@ import {
 import { formatBytes } from './services/hasher';
 
 export default function App() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [isAuthSettingsOpen, setIsAuthSettingsOpen] = useState(false);
 
   // Navigation & Modes
   const [activeTab, setActiveTab] = useState<'scan' | 'local' | 'about'>('scan');
@@ -178,7 +179,11 @@ export default function App() {
     } catch (err: unknown) {
       console.error('Login error:', err);
       const msg = err instanceof Error ? err.message : 'Sign-in failed. Please try again.';
-      setAuthError(msg);
+      if (msg.includes('NO_CONFIG')) {
+        setIsAuthSettingsOpen(true);
+      } else {
+        setAuthError(msg);
+      }
     } finally {
       setIsLoggingIn(false);
     }
@@ -232,13 +237,18 @@ export default function App() {
           currentToken = loginRes.accessToken;
         }
       } catch (err: unknown) {
-        setAuthError('Please sign in with Google to grant access to your photos.');
+        const msg = err instanceof Error ? err.message : '';
+        if (msg.includes('NO_CONFIG')) {
+          setIsAuthSettingsOpen(true);
+        } else {
+          setAuthError('Please sign in with Google or configure your credentials in Settings.');
+        }
         return;
       }
     }
 
     if (!currentToken) {
-      setAuthError('Authentication required. Please sign in with Google.');
+      setIsAuthSettingsOpen(true);
       return;
     }
 
@@ -433,6 +443,7 @@ export default function App() {
         user={user}
         onSignIn={handleSignIn}
         onSignOut={handleSignOut}
+        onOpenAuthSettings={() => setIsAuthSettingsOpen(true)}
         isLoggingIn={isLoggingIn}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -759,6 +770,19 @@ export default function App() {
           selectedItems={photos.filter((p) => p.selectedForAction)}
         />
       )}
+
+      {/* Google Authentication & Credentials Settings Modal */}
+      <GoogleAuthSettingsModal
+        isOpen={isAuthSettingsOpen}
+        onClose={() => setIsAuthSettingsOpen(false)}
+        currentUser={user}
+        onAuthSuccess={(authUser, authToken) => {
+          setUser(authUser);
+          setToken(authToken);
+          setAuthError(null);
+          confetti({ particleCount: 35, spread: 60, origin: { y: 0.6 } });
+        }}
+      />
 
       {/* Footer */}
       <footer className="border-t border-slate-200 bg-white py-6 text-xs text-slate-500 mt-auto">

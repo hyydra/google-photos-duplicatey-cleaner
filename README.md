@@ -42,25 +42,33 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## 🔐 Environment Configuration (Optional)
+## 🔐 Connecting Your Google Account
 
-The application works out of the box for **Local File Drops** and **Demo Sample Mode** without any API keys.
+PhotoSHA offers three flexible, secure ways for anyone to connect their own Google account:
 
-To connect to live Google Photos / Google Drive libraries:
-1. Copy `.env.example` to `.env.local`:
-   ```bash
-   cp .env.example .env.local
-   ```
-2. Create a Firebase project with Google Sign-in enabled and add your Web App credentials:
-   ```env
-   VITE_FIREBASE_API_KEY=your_api_key_here
-   VITE_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
-   VITE_FIREBASE_PROJECT_ID=your-project-id
-   VITE_FIREBASE_STORAGE_BUCKET=your-project-id.firebasestorage.app
-   VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-   VITE_FIREBASE_APP_ID=your_app_id
-   ```
-3. Enable the **Google Drive API** and **Google Photos Picker API** in the Google Cloud Console for your project.
+### Method 1: Using Your Own Google OAuth Client ID (Recommended)
+Because Google Photos requires sensitive scopes (`drive.readonly`), using your own free Client ID allows you to access your personal account with **no app verification warnings** and **complete privacy** (all tokens stay in your browser):
+1. In the [Google Cloud Console](https://console.cloud.google.com/apis/credentials), enable the **Google Drive API**.
+2. Create an **OAuth 2.0 Client ID** with type **Web application**.
+3. Under **Authorized JavaScript origins**, add your local URL: `http://localhost:3000` (or `http://localhost:5173`).
+4. Click the **Key icon** in PhotoSHA's top bar, paste your Client ID, and click **Sign In & Authorize Scan**.
+*(Your Client ID is stored locally in your browser so you only need to enter it once).*
+
+### Method 2: Direct Access Token (Fastest / 1-Minute Scan)
+If you just want to run a quick test without creating a Client ID:
+1. Generate a temporary OAuth token via:
+   * [Google OAuth 2.0 Playground](https://developers.google.com/oauthplayground) (select `drive.readonly` and exchange for tokens).
+   * Or from terminal: `gcloud auth print-access-token`
+2. Click the **Key icon** in PhotoSHA → select **Direct Access Token** → paste and click **Verify & Connect**.
+
+### Method 3: Offline / Local Mode (Zero Setup)
+Switch to the **Local Files** tab to drag and drop Google Takeout folders or local image archives. All hashes and EXIF diffs are computed 100% offline in your browser using hardware-accelerated Web Crypto.
+
+### Optional: Pre-configure via Environment Variables
+To preset a default Client ID across builds, add it to `.env.local`:
+```env
+VITE_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+```
 
 ---
 
